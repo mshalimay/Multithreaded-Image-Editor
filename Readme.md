@@ -1,19 +1,19 @@
 # Summary
+This is an image processor using convolution and parallel strategies implemented from basic parallel constructs. 
 
-I chose to re-implement the image processing application in `project1` with three new features: 
-- (i) A `pipeline` with three phases: (1) loading the data from disk (2) processing data from disk (3) writing the data back to disk.
-- (ii) `bsp` for image processing in slices: during phase 2 of the pipeline, a go routine can process an image by slicing it and distributing to multiple *sub-routines*. Each sub-routine apply the effects to it's slice and when finished, awaits for the other routines to finish before proceeding to the next.
-- (iii) Work Stealing (WS) refinement. In the WS, each go-routine/worker holds a DEQueue of runnable tasks; when go-routines are finished with their tasks, they randomly steal tasks from other go-routines.
-
-As a result of these changes, some modifications were made to the main `editor.go` executable and to the analysis cases. Please see the below sections for details.
-
-Obs.: A new option `[chunk size]` was also added to run the overall pipeline in chunks of images to potentially reduce memory consumption, but I ended up not needing to use it.
+Given a folder with images to process, there are the following variants for implementation:
+- A totally sequential implementation
+- A basic parallel implementation `parfiles`, where each image is loaded to the disk, processed and saved to the disk by multiple threads at a time
+- A basic parallel implementation `parslices`, where each image is loaded and saved at a time and processed by multiple threads  
+- A `pipeline` with three phases: (1) loading the data from disk (2) processing data from disk (3) writing the data back to disk.
+- `bsp` for image processing in slices: during phase 2 of the pipeline, a go routine can process an image by slicing it and distributing to multiple *sub-routines*. Each sub-routine apply the effects to it's slice and when finished, awaits for the other routines to finish before proceeding to the next.
+- Work Stealing (WS) refinement. In the WS, each go-routine/worker holds a DEQueue of runnable tasks; when go-routines are finished with their tasks, they randomly steal tasks from other go-routines.
 
 ## Outline:
-- Section 1 recapitulates the program crated in this project and section 
-- Section 2 describes all the parallel implementations, especially the introduced features: pipeline with BSP and the work stealing
-- Section (3) contains usage instructions
-- Section (4) contains analysis and comparison for the different parallel strategies
+- Section 1 describes the program created in this project 
+- Section 2 describes all the parallel implementations
+- Section 3 contains usage instructions
+- Section 4 contains analysis and comparison for the different parallel strategies
 
 # 1) Project description
 
