@@ -1,11 +1,11 @@
 # Summary
-This is an image processor using convolution and parallel strategies implemented from basic parallel constructs. 
+Image processor using convolution and parallel strategies implemented from basic parallel constructs. 
 
-Given a folder with images to process, there are the following variants for implementation:
-- A totally sequential implementation
+Given a folder with images to process, below following variants for implementation:
+- A totally sequential implementation, where each image in the folder is loaded, processed and saved back to disk
 - A basic parallel implementation `parfiles`, where each image is loaded to the disk, processed and saved to the disk by multiple threads at a time
-- A basic parallel implementation `parslices`, where each image is loaded and saved at a time and processed by multiple threads  
-- A `pipeline` with three phases: (1) loading the data from disk (2) processing data from disk (3) writing the data back to disk.
+- A basic parallel implementation `parslices`, where each image is loaded and saved at a time, but processed by multiple threads concurrently
+- A `pipeline` implementation with three phases: (1) loading the data from disk (2) processing data from disk (3) writing the data back to disk
 - `bsp` for image processing in slices: during phase 2 of the pipeline, a go routine can process an image by slicing it and distributing to multiple *sub-routines*. Each sub-routine apply the effects to it's slice and when finished, awaits for the other routines to finish before proceeding to the next.
 - Work Stealing (WS) refinement. In the WS, each go-routine/worker holds a DEQueue of runnable tasks; when go-routines are finished with their tasks, they randomly steal tasks from other go-routines.
 
