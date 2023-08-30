@@ -1,0 +1,55 @@
+
+// Convolution equation: 
+// y[i,j] = Sum_m_0_M Sum_n_0_N ( h[m, n] x[i + M//2 - m, j + N//2 - n ] )
+// where (i,j) and (m,n) are in standard row/column notation
+// reference: https://www.allaboutcircuits.com/technical-articles/two-dimensional-convolution-in-image-processing/
+
+func (img *Image) Convolve2(kernel [][]float64){
+
+	var initPixels *image.RGBA64
+	if img.modif == 0 {
+		initPixels = img.in
+	} else {
+		initPixels = img.out
+	}
+
+	bounds := img.out.Bounds()
+
+	// kernel center element 
+	kernelCenterRow := len(kernel) / 2
+	kernelCenterCol := len(kernel[0]) / 2
+
+	// iterate over image rows
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		// iterave over image columns
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			
+			// new pixel RGBA values
+			var rNew, gNew, bNew, aNew float64
+			
+			// iterate over kernel rows
+			for m:=0; m < len(kernel); m++ {
+				// iterate over kernel columns
+				for n:=0; n < len(kernel[0]); n++ {
+					// Adjusted indexes to access image pixels
+					// this is necessary bcs adjusted kernel to be from 0 to +infty (instead of -infty to +infty)
+					xx := x + kernelCenterCol - n
+					yy := y + kernelCenterRow - m
+
+					// if indexes in bounds, apply the kernel to the pixel to Im[xx,yy]
+					// Obs: in .at[x,y], x is the column and y is the row
+					if xx < bounds.Max.X && xx >= bounds.Min.X && yy < bounds.Max.Y && yy >= bounds.Min.Y {
+						r, g , b , a := initPixels.At(xx, yy).RGBA()
+						rNew += float64(r) * kernel[m][n]
+						gNew += float64(g) * kernel[m][n]
+						bNew += float64(b) * kernel[m][n]
+						aNew += float64(a) * kernel[m][n]
+					}
+				}
+			}
+			// set new pixel to out image
+			img.out.Set(x, y, color.RGBA64{uint16(clamp(rNew)), uint16(clamp(gNew)), uint16(clamp(bNew)), uint16(clamp(aNew))})
+		}
+	}
+	img.modif = 1
+}

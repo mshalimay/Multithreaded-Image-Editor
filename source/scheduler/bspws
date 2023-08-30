@@ -1,0 +1,222 @@
+// MEMO: bspws implementation
+
+import (
+	"fmt"
+	ws "proj3/WorkStealing"
+	"proj3/constants"
+	"proj3/png"
+	"proj3/utils"
+	"sync"
+	"time"
+)
+
+// Image processing using pseudo pipeline and BSP strategies with work stealing refinement.
+// - Pipeline: load image -> apply effects -> save image
+// - For each image in each phase, `Task`s implementing the `ws.Runnable` interface
+// 	 are created and distributed among workers. Workers execute these tasks in parallel
+//   and might steal tasks from one another if their own DEqueue is empty.
+
+// - In phase2, each worker may spawn sub-threads to process slices of the image in parallel.
+//   The synchronization of the sub-threads is done using a barrier from one effect to the next.
+
+// Run the phase 1 of the pipeline.
+// @tasks is a list built from the user's input containing `inPath`, `outPath` and `effects`.
+// @nWorkers is the number of threads to use.
+func BSPPhase1(tasks []utils.Task, nWorkers int) []*TaskPhase2 {
+	numTasks := len(tasks)
+	
+	// Channel for Runnables to send results of phase 1 
+	t2Chan := make(chan *TaskPhase2, numTasks)
+
+	// intitialize workers and DEQueues
+	workers := InitTaskStealing(nWorkers)
+
+	// Evenly divide tasks among workers.
+	for i := range tasks {
+		// select a worker and add a Phase 1 task to it's DEqueue
+		workers[i % nWorkers].AddTask(NewTaskPhase1(&tasks[i], t2Chan))
+	}
+	
+	// Channel to signalize workers to stop working/stealing.
+	done := make(chan struct{})
+
+	// Start the workers.
+	for _, worker := range workers {
+		go func(w *ws.Worker) {
+			w.Run(done)
+		}(worker)
+	}
+
+	// Iterate over the channel to receive the results of phase 1.
+	// This will block until all `Runnables` are finished
+	tasksPhase2 := make([]*TaskPhase2, 0, numTasks)
+	for i := 0; i < numTasks; i++ {
+		tasksPhase2 = append(tasksPhase2, <- t2Chan)
+	}
+
+	// Phase 1 finished; signal workers to stop working/stealing and return results for Phase2.
+	close(done)
+	return tasksPhase2
+}
+
+
+// Run the phase 2 of the pipeline.
+func BSPPhase2(tasksPhase2 []*TaskPhase2, nWorkers int, nSubThreads int) []*TaskPhase3{
+
+	numTasks := len(tasksPhase2)
+	
+	// Intitialize workers and DEQueues.
+	workers := InitTaskStealing(nWorkers)
+
+	// Channel for Runnables to send results of phase 2.
+	t3Chan := make(chan *TaskPhase3, numTasks)
+
+	// Evenly divide tasks among workers.
+	for i := range tasksPhase2 {
+		// set values not passed by previous pipe phases
+		tasksPhase2[i].t3Channel = t3Chan
+		tasksPhase2[i].nSubThreads = nSubThreads 
+
+		// select a worker and add Phase 2 task to it's DEqueue
+		workers[i % nWorkers].AddTask(tasksPhase2[i])
+	}
+	
+	// Channel to signalize workers to stop working/stealing.
+	done := make(chan struct{})
+
+	// Start the workers.
+	for _, worker := range workers {
+		go func(w *ws.Worker) {
+			w.Run(done)
+		}(worker)
+	}
+
+	// Iterate over the channel to receive the results of phase 2.
+	// This will block until all `TaskPhase2`s are finished.
+	tasksPhase3 := make([]*TaskPhase3, 0, numTasks)
+	for i := 0; i < numTasks; i++ {
+		tasksPhase3 = append(tasksPhase3, <- t3Chan)
+	}
+
+	// Phase 2 finished; signal workers to stop working/stealing and return results for Phase3.
+	close(done)
+	return tasksPhase3
+}
+	
+//=============================================================================
+// Phase 3 methods and structs
+//=============================================================================
+
+// TaskPhase3 implements `ws.Runnable` interface.
+// Each image to be saved is associated to a `TaskPhase3`.
+type BSP3 struct {
+	img 			*png.Image		  // final image to be saved
+	outPath 		string			  // path to save the image
+	wg 				*sync.WaitGroup	  // waitgroup for main routine to wait until all images are saved
+}
+
+func RunPhase3(tasksPhase3 []*TaskPhase3, nWorkers int){
+
+	// initialize workers and their queues
+	workers := InitTaskStealing(nWorkers)
+
+	// Waitgroup for main routine to wait until all `TaskPhase3`s are finished
+	var wg sync.WaitGroup
+	wg.Add(len(tasksPhase3))
+
+	// evenly divide tasks among workers
+	for i := range tasksPhase3 {
+		tasksPhase3[i].wg = &wg 
+		// select a worker and a Phase 1 task to it's DEqueue
+		workers[i % nWorkers].AddTask(tasksPhase3[i])
+	}
+	
+	// Channel to signalize workers to stop working/stealing.
+	// Not needed; useful if more steps are added to the pipeline.
+	done := make(chan struct{})
+
+	// Start the workers.
+	for _, worker := range workers {
+		go func(w *ws.Worker) {
+			w.Run(done)
+		}(worker)
+	}
+
+	// Wait for all `TaskPhase3`s to finish.
+	wg.Wait()
+
+	// Signal workers to stop working/stealing.
+	close(done)
+}
+
+
+func RunBSPWS(config Config){
+	//start timer
+	startTime := time.Now()
+
+	//==========================================================================
+	// Initialization
+	//==========================================================================
+	
+	// create a list of tasks based off of the data directories
+	tasks := utils.CreateTasks(config.DataDirs)
+
+	// compute number of threads to use in work stealing
+	nThreads := config.ThreadCount
+	if nThreads > len(tasks.Tasks){
+		nThreads = len(tasks.Tasks)
+	}
+
+	nSubThreads := config.SubThreadCount
+
+	// timers for parallel section
+	var totalParallelTime time.Duration
+	startParallel := time.Now()
+
+	//==========================================================================
+	// Execute the pipeline and save times
+	//==========================================================================
+
+	// potentially process chunks of tasks to reduce memory usage
+
+	// create chunks of tasks to process based on user input
+	// if no input, defaults to all tasks
+	var chunks []int
+	if config.ChunkSize > 0{
+		chunks = ChunksOfTasks(len(tasks.Tasks), config.ChunkSize)
+	} else {
+		chunks = []int{0, len(tasks.Tasks)}
+	}
+
+	// run the whole pipeline for each chunk of tasks
+	for i := 0; i < len(chunks)-1; i++ {
+		start := chunks[i]
+		end := chunks[i+1]
+		tasks := tasks.Tasks[start:end]
+		RunPhase3(RunPhase2(RunPhase1(tasks, nThreads), nThreads, nSubThreads), nThreads)
+	}
+	
+	// elapsed time for parallel section
+	totalParallelTime = time.Since(startParallel)
+
+	// total elapsed time
+	elapsedTime := time.Since(startTime)
+
+	// write times + settings into JSON format 
+	
+	// Obs: PipeBSPWS mode = "pipebspws_<nSubThreads><_chunkSize>"
+	
+	var chunkSizeStr string
+	if config.ChunkSize == 0 {
+		chunkSizeStr = ""
+	} else {
+		chunkSizeStr = fmt.Sprintf("_%d", config.ChunkSize)
+	}
+
+	writeStr := fmt.Sprintf("{\"mode\": \"%s_%d%s\", \"threads\": %d, \"timeElapsed\": %f, \"timeParallel\": %f , \"datadir\": \"%s\"}\n", 
+				config.Mode, config.SubThreadCount, chunkSizeStr ,nThreads, elapsedTime.Seconds(), totalParallelTime.Seconds(), config.DataDirs)
+	
+	// write results to file
+	utils.WriteToFile(resultsPath, writeStr)
+	
+}

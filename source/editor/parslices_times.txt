@@ -1,0 +1,1 @@
+{"threads": 8, "elapsed": 4.935506, "datadir": small}

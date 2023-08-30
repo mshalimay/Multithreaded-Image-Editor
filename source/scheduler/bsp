@@ -1,0 +1,233 @@
+// MEMO: bsp implementation
+
+
+package scheduler
+
+import (
+	"fmt"
+	ws "proj3/WorkStealing"
+	"proj3/utils"
+	"sync"
+	"time"
+)
+
+// Image processing using pseudopipeline and BSP model.
+// The strucutre is similar to `PipeBSPWS` but without the work stealing refinement.
+// In particular, `Worker`s holds a slice (not a DEQuue) of `ws.Runnable` tasks
+// for better comparison to the the work stealing version. See `PipeBSPWS` for the struct definitions.
+
+// - Pipeline: load image -> apply effects -> save image
+// - For each image in each phase, `Task`s implementing the `ws.Runnable` interface
+// 	 are created and distributed among workers. Workers execute these tasks in parallel
+//   and might steal tasks from one another if their own DEqueue is empty.
+
+// - In phase2, each worker may spawn sub-threads to process slices of the image in parallel.
+//   The synchronization of the sub-threads is done using a barrier from one effect to the next.
+
+//=============================================================================
+// Methods and Structs for all phases
+//=============================================================================
+
+// A `Worker` here is more lightweight than the one in WorkStealing.
+// Holds a simple slice of tasks to execute. No DEqueue (and atomics that come with it).
+type Worker struct{
+	tasks 		[]ws.Runnable
+	id 			int
+}
+
+// Each worker simply runs until all tasks are done. No stealing.
+func (w *Worker) Run() {
+	for _, task := range w.tasks {
+		task.Execute(w.id)
+	}
+}
+
+// Initialize a slice of `Worker`s with empty task slices.
+func InitializeWorkers(nWorkers int) []*Worker{
+	workers := make([]*Worker, nWorkers)
+	for i := 0; i < nWorkers; i++ {
+		workers[i] = &Worker{tasks: make([]ws.Runnable,0), id: i}
+	}
+	return workers
+}
+
+//=============================================================================
+// Phase 1: Load images
+//=============================================================================
+
+
+// Run phase 1 of the pipeline.
+func Run1(tasks []utils.Task, nWorkers int) []*TaskPhase2 {
+	numTasks := len(tasks)
+	
+	// intitialize workers
+	workers := InitializeWorkers(nWorkers)
+
+	// Channel for `TaskPhase1`s runnables to send results to
+	t2Chan := make(chan *TaskPhase2, numTasks)
+
+	// evenly divide tasks among workers
+	for i := range tasks {
+		// select a worker and add a Phase 1 task to it's DEqueue
+		workers[i % nWorkers].tasks = append(workers[i % nWorkers].tasks, NewTaskPhase1(&tasks[i], t2Chan))
+	}
+
+	// Start the workers.
+	for _, worker := range workers {
+		go func(w *Worker) {
+			w.Run()
+		}(worker)
+	}
+
+	// Iterate over the channel to receive the results of phase 1.
+	// This will block until all `TaskPhase1`s are finished.
+	tasksPhase2 := make([]*TaskPhase2, 0, numTasks)
+	for i := 0; i < numTasks; i++ {
+		tasksPhase2 = append(tasksPhase2, <- t2Chan)
+	}
+
+	return tasksPhase2
+}
+
+
+//=============================================================================
+// Phase 2 methods and structs
+//=============================================================================
+
+func Run2(tasksPhase2 []*TaskPhase2, nWorkers int, nSubThreads int) []*TaskPhase3{
+
+	numTasks := len(tasksPhase2)
+	
+	// intitialize workers
+	workers := InitializeWorkers(nWorkers)
+	
+	// Channel for `TaskPhase2`s runnables to send results to
+	t3Chan := make(chan *TaskPhase3, numTasks)
+
+	// evenly divide tasks among workers
+	for i := range tasksPhase2 {
+		tasksPhase2[i].t3Channel = t3Chan
+		tasksPhase2[i].nSubThreads = nSubThreads 
+		// select a worker and add a Phase 2 task to it's DEqueue
+		workers[i % nWorkers].tasks = append(workers[i % nWorkers].tasks, tasksPhase2[i])
+	}
+	
+	// Start the workers.
+	for _, worker := range workers {
+		go func(w *Worker) {
+			w.Run()
+		}(worker)
+	}
+
+	// Iterate over the channel to receive the results of phase 2.
+	// This will block until all `TaskPhase2`s are finished.
+	tasksPhase3 := make([]*TaskPhase3, 0, numTasks)
+	for i := 0; i < numTasks; i++ {
+		tasksPhase3 = append(tasksPhase3, <- t3Chan)
+	}
+
+	return tasksPhase3
+}
+	
+//=============================================================================
+// Phase 3 methods and structs
+//=============================================================================
+
+func Run3(tasksPhase3 []*TaskPhase3, nWorkers int){
+
+	// initialize workers and their queues
+	workers := InitializeWorkers(nWorkers)
+
+	// WaitGroup for main routine to wait for all `TaskPhase3`s to finish
+	var wg sync.WaitGroup
+	wg.Add(len(tasksPhase3))
+
+	// evenly divide tasks among workers
+	for i := range tasksPhase3 {
+		tasksPhase3[i].wg = &wg 
+		workers[i % nWorkers].tasks = append(workers[i % nWorkers].tasks, tasksPhase3[i])
+	}
+	
+	// Start the workers.
+	for _, worker := range workers {
+		go func(w *Worker) {
+			w.Run()
+		}(worker)
+	}
+
+	// Wait until all `TaskPhase3`s are finished.
+	wg.Wait()
+}
+
+
+
+func RunPipeBSP(config Config){
+
+	//start timer
+	startTime := time.Now()
+
+	//=============================================================================
+	// Initialization
+	//=============================================================================
+	
+	// create a list of tasks based off of the data directories
+	tasks := utils.CreateTasks(config.DataDirs)
+
+	// compute number of threads to use in work stealing
+	nThreads := config.ThreadCount
+	if nThreads > len(tasks.Tasks){
+		nThreads = len(tasks.Tasks)
+	}
+
+	nSubThreads := config.SubThreadCount
+
+	// timers for parallel section
+	var totalParallelTime time.Duration
+	startParallel := time.Now()
+
+	//=============================================================================
+	// Execute pipeline and accumulate elapsed parallel time
+	//=============================================================================
+	
+	// potentially process chunks of tasks to reduce memory usage
+
+	// create chunks of tasks to process based on user input
+	// if no input, defaults to all tasks
+	var chunks []int
+	if config.ChunkSize > 0{
+		chunks = ChunksOfTasks(len(tasks.Tasks), config.ChunkSize)
+	} else {
+		chunks = []int{0, len(tasks.Tasks)}
+	}
+
+	// run the whole pipeline for each chunk of tasks
+	for i := 0; i < len(chunks)-1; i++ {
+		start := chunks[i]
+		end := chunks[i+1]
+		tasks := tasks.Tasks[start:end]
+		Run3(Run2(Run1(tasks, nThreads), nThreads, nSubThreads), nThreads)
+	}
+	
+	// elapsed time for parallel section
+	totalParallelTime = time.Since(startParallel)
+
+	// total elapsed time
+	elapsedTime := time.Since(startTime)
+
+	// write times + settings into JSON format 
+	// Obs: PipeBSP mode = "pipebspws_<nSubThreads><_chunkSize>"
+	
+	var chunkSizeStr string
+	if config.ChunkSize == 0 {
+		chunkSizeStr = ""
+	} else {
+		chunkSizeStr = fmt.Sprintf("_%d", config.ChunkSize)
+	}
+
+	writeStr := fmt.Sprintf("{\"mode\": \"%s_%d%s\", \"threads\": %d, \"timeElapsed\": %f, \"timeParallel\": %f , \"datadir\": \"%s\"}\n", 
+				config.Mode, config.SubThreadCount, chunkSizeStr ,nThreads, elapsedTime.Seconds(), totalParallelTime.Seconds(), config.DataDirs)
+	
+	// write results to file
+	utils.WriteToFile(resultsPath, writeStr)
+	
+}

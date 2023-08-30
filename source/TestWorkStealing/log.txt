@@ -1,0 +1,133 @@
+Switched worker 2 to create tasks mode
+Worker 7 stole task 1 from worker 2
+Worker 2 is in create tasks mode
+Worker 5 stole task 2 from worker 2
+Worker 5 exec task 2 on behalf of worker 2
+Worker 5 sleeping for 3 seconds
+Worker 1 stole task 4 from worker 2
+Worker 4 stole task 3 from worker 2
+Worker 4 exec task 3 on behalf of worker 2
+Worker 4 sleeping for 2 seconds
+Worker 7 exec task 1 on behalf of worker 2
+Worker 7 sleeping for 3 seconds
+Worker 6 stole task 6 from worker 2
+Worker 6 exec task 6 on behalf of worker 2
+Worker 6 sleeping for 2 seconds
+Worker 3 stole task 5 from worker 2
+Worker 3 exec task 5 on behalf of worker 2
+Worker 3 sleeping for 2 seconds
+Worker 1 exec task 4 on behalf of worker 2
+Worker 1 sleeping for 1 seconds
+Worker 0 stole task 7 from worker 2
+Worker 0 exec task 7 on behalf of worker 2
+Worker 0 sleeping for 2 seconds
+Worker 2 added task 22 to its own queue
+Worker 1 stole task 8 from worker 2
+Worker 1 exec task 8 on behalf of worker 2
+Worker 1 sleeping for 3 seconds
+Worker 2 added task 23 to its own queue
+Worker 0 stole task 9 from worker 2
+Worker 3 stole task 10 from worker 2
+Worker 3 exec task 10 on behalf of worker 2
+Worker 3 sleeping for 3 seconds
+Worker 6 stole task 12 from worker 2
+Worker 6 exec task 12 on behalf of worker 2
+Worker 6 sleeping for 2 seconds
+Worker 4 stole task 11 from worker 2
+Worker 4 exec task 11 on behalf of worker 2
+Worker 4 sleeping for 1 seconds
+Worker 0 exec task 9 on behalf of worker 2
+Worker 0 sleeping for 2 seconds
+Worker 2 added task 24 to its own queue
+Worker 5 stole task 13 from worker 2
+Worker 5 exec task 13 on behalf of worker 2
+Worker 5 sleeping for 2 seconds
+Worker 7 stole task 14 from worker 2
+Worker 7 exec task 14 on behalf of worker 2
+Worker 7 sleeping for 1 seconds
+Worker 4 stole task 15 from worker 2
+Worker 4 exec task 15 on behalf of worker 2
+Worker 4 sleeping for 2 seconds
+Worker 2 added task 25 to its own queue
+Worker 1 stole task 16 from worker 2
+Worker 1 exec task 16 on behalf of worker 2
+Worker 1 sleeping for 1 seconds
+Worker 7 stole task 17 from worker 2
+Worker 7 exec task 17 on behalf of worker 2
+Worker 7 sleeping for 3 seconds
+Worker 6 stole task 18 from worker 2
+Worker 6 exec task 18 on behalf of worker 2
+Worker 6 sleeping for 1 seconds
+Worker 2 added task 26 to its own queue
+Worker 0 stole task 19 from worker 2
+Worker 0 exec task 19 on behalf of worker 2
+Worker 0 sleeping for 3 seconds
+Worker 2 added task 27 to its own queue
+Worker 5 stole task 20 from worker 2
+Worker 5 exec task 20 on behalf of worker 2
+Worker 5 sleeping for 2 seconds
+Worker 1 stole task 22 from worker 2
+Worker 1 exec task 22 on behalf of worker 2
+Worker 1 sleeping for 2 seconds
+Worker 4 stole task 23 from worker 2
+Worker 4 exec task 23 on behalf of worker 2
+Worker 4 sleeping for 1 seconds
+Worker 3 stole task 24 from worker 2
+Worker 3 exec task 24 on behalf of worker 2
+Worker 3 sleeping for 2 seconds
+Worker 6 stole task 25 from worker 2
+Worker 6 exec task 25 on behalf of worker 2
+Worker 6 sleeping for 3 seconds
+Worker 2 added task 28 to its own queue
+Worker 4 stole task 26 from worker 2
+Worker 4 exec task 26 on behalf of worker 2
+Worker 4 sleeping for 3 seconds
+Worker 2 added task 29 to its own queue
+Worker 7 stole task 27 from worker 2
+Worker 7 exec task 27 on behalf of worker 2
+Worker 7 sleeping for 2 seconds
+Worker 5 stole task 28 from worker 2
+Worker 5 exec task 28 on behalf of worker 2
+Worker 5 sleeping for 1 seconds
+Worker 0 stole task 29 from worker 2
+Worker 0 exec task 29 on behalf of worker 2
+Worker 0 sleeping for 3 seconds
+Worker 2 added task 30 to its own queue
+Worker 1 stole task 30 from worker 2
+Worker 1 exec task 30 on behalf of worker 2
+Worker 1 sleeping for 2 seconds
+Worker 2 added task 31 to its own queue
+Worker 3 stole task 31 from worker 2
+Worker 3 exec task 31 on behalf of worker 2
+Worker 3 sleeping for 1 seconds
+Worker 2 added task 32 to its own queue
+Worker 5 stole task 32 from worker 2
+Worker 5 exec task 32 on behalf of worker 2
+Worker 5 sleeping for 2 seconds
+Worker 2 added task 33 to its own queue
+Worker 4 stole task 33 from worker 2
+Worker 4 exec task 33 on behalf of worker 2
+Worker 4 sleeping for 3 seconds
+Worker 2 added task 34 to its own queue
+Worker 0 stole task 34 from worker 2
+Worker 0 exec task 34 on behalf of worker 2
+Worker 0 sleeping for 2 seconds
+Worker 2 added task 35 to its own queue
+Worker 1 stole task 35 from worker 2
+Worker 1 exec task 35 on behalf of worker 2
+Worker 1 sleeping for 2 seconds
+Worker 2 added task 36 to its own queue
+Worker 7 stole task 36 from worker 2
+Worker 7 exec task 36 on behalf of worker 2
+Worker 7 sleeping for 1 seconds
+Worker 2 added task 37 to its own queue
+Worker 4 stole task 37 from worker 2
+Worker 4 exec task 37 on behalf of worker 2
+Worker 4 sleeping for 2 seconds
+Worker 2 added task 38 to its own queue
+Worker 2 executing task 21
+Worker 2 sleeping for 2 seconds
+Worker 3 stole task 38 from worker 2
+Worker 3 exec task 38 on behalf of worker 2
+Worker 3 sleeping for 3 seconds
+Total number of tasks created: 37
