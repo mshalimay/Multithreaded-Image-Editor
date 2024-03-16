@@ -1,5 +1,5 @@
 # Summary
-Image processor using convolution and parallel strategies implemented from basic parallel constructs. 
+Image editor using parallelized convolution operators implemented from scratch from basic parallel constructs. 
 
 Given a folder with images to process, below following variants for implementation:
 - A totally sequential implementation, where each image in the folder is loaded, processed and saved back to disk
