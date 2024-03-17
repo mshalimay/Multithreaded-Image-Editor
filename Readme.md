@@ -37,7 +37,7 @@ The project was implemented in the `go` language, with the following variations 
 - `parslices`: each image is divided into multiple slices, each of which is processed by a thread. In this implementation, Each image is loaded and saved at a time.
 
 - `pipebsp` and `pipebspws`: details in the next two sections
-## 2.1) New feature:  pipeline and BSP
+## 2.1) Pipeline and BSP description
 
 `pipebsp` strategy consists of the following:
 - the program spawns multiple go routines according to the user input  `number of threads`. These are the `workers`.
@@ -58,7 +58,7 @@ The project was implemented in the `go` language, with the following variations 
 
 	- The design choice using tasks that execute themselves is useful for the work stealing case and was used here also to make comparisons cleaner.
 
-## 2.2) New feature: work stealing
+## 2.2) Work stealing description
 `pipebspws` has the same design as `pipebsp`, but adding a **work stealing refinement**. 
 ###  Work Stealing implementation
 The package `WorkStealing` contains all the constructs for the Work Stealing.
