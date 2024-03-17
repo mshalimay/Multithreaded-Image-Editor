@@ -1,5 +1,5 @@
 # Summary
-This repository implements an image editor for RGB images, implemented from scratch with convolution operators and from primitive parallel constructs (atomics, waiting groups, semaphores and channels for pipeline only).
+This repository implements an image editor for RGB images, implemented from scratch with convolution operators and from primitive parallel constructs (atomics, waiting groups, mutexes, semaphores and channels).
 
 Given a folder with images to process, alternative implementations:
 - A totally sequential implementation, where each image in the folder is loaded, processed and saved back to disk
