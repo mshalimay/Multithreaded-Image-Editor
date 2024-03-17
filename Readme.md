@@ -1,5 +1,5 @@
 # Summary
-This repository implements an image editor for RGB images, implemented from scratch from primitive parallel constructs and convolution operators.
+This repository implements an image editor for RGB images, implemented from scratch with convolution operators and from primitive parallel constructs (atomics, waiting groups, semaphores and channels for pipeline only).
 
 Given a folder with images to process, alternative implementations:
 - A totally sequential implementation, where each image in the folder is loaded, processed and saved back to disk
@@ -71,7 +71,7 @@ The package `WorkStealing` contains all the constructs for the Work Stealing.
 	- A new `CircularArray` with double the capacity is created and all tasks of the previous array are transfered to it.
 
 `DEQueue`
-- Is a double ended queue implement using the  `CircularArray` offering a thread-safe way for multiple workers to get tasks from the array and/or steal tasks from others
+- Is a double ended queue implement using the  `CircularArray` offering a thread-safe and non-blocking way for multiple workers to get tasks from the array and/or steal tasks from others
 - In the work stealing, each `DEQueue` of tasks has a worker as it's owner. 
 - The thread owner of a `DEQueue` only access it through the methods `pushBottom` (to add tasks) and `popBottom` (to retrieve).
 - Thieves can access other thread's `DEQueue`s  through  `popTop` method. 
