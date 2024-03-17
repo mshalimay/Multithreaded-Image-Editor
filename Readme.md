@@ -8,7 +8,7 @@ Given a folder with images to process, alternative implementations:
 - A `pipeline` implementation with three phases: (1) loading the data from disk (2) processing data from disk (3) writing the data back to disk. Multiple threads operates in each phase.
 - `bsp` for image processing in slices: during phase 2 of the pipeline, a go routine can process an image by slicing it and distributing to multiple *sub-routines*. Each sub-routine apply the effects to it's slice and when finished, awaits for the other routines to finish before proceeding to the next.
 - Pipeline-BSP with work stealing. Each worker holds a non-blocking and thread-safe double-ended queue of tasks; when workers are finished with their tasks, they randomly steal tasks from other workers.
-- **Obs: implementation of the thread-safe double-ended queue is also provided.**
+- **Obs: implementation of the non-blocking thread-safe double-ended queue is also provided.**
 
 ## Outline:
 - Section 1 describes the program created in this project 
